@@ -68,7 +68,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         time = 0.0;
     }
 
-    float* monoBuff = new float[numSamples];
+    auto monoBuff = std::make_unique<float[]>(numSamples);
     for (auto sample = 0; sample < numSamples; ++sample)
     {
         auto sinVal = level * sin(2 * juce::MathConstants<double>::pi * frequency * time + phase);
