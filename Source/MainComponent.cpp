@@ -48,8 +48,8 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     auto numChannels = buffer->getNumChannels();
     auto numSamples = buffer->getNumSamples();
     juce::AudioBuffer<float> outputBuffer(*buffer);
-    float val = 0.0;
-    auto threshold = 0.4;
+    float meanAboveThld = 0.0;
+    auto threshold = 0.62;
 
     for (auto chan = 0; chan < numChannels; chan++)
     {
@@ -58,7 +58,7 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         for (auto sample = 0; sample < numSamples; sample++)
         {
             if (abs(rPtr[sample]) >= threshold)
-                val += abs(rPtr[sample]) / numSamples;
+                meanAboveThld += abs(rPtr[sample]) / numSamples;
         }
     }
 
@@ -76,7 +76,9 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
         time += deltaTime;
     }
     
-    if (val > 0.3)
+    meanAboveThld += prevMean / 2;
+    prevMean = meanAboveThld;
+    if (meanAboveThld > 0.0002)
     {
 
     
@@ -90,7 +92,6 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
             }
         }
     }
-    
 }
 
 std::unique_ptr<juce::AudioFormatReaderSource> MainComponent::getAudioBufferFromFile(juce::File file)
