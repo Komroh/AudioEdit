@@ -29,6 +29,7 @@ private:
     // Your private member variables go here...
     juce::AudioFormatManager formatManager;
     std::unique_ptr<juce::AudioFormatReaderSource> audioSrc;
-
+    double time = 0.0, phase = 0.0, deltaTime = 0.0;
+    int frequency = 880;
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (MainComponent)
 };

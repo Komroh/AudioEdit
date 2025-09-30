@@ -31,14 +31,11 @@ MainComponent::~MainComponent()
 //==============================================================================
 void MainComponent::prepareToPlay (int samplesPerBlockExpected, double sampleRate)
 {
-    // This function will be called when the audio device is started, or when
-    // its settings (i.e. sample rate, block size, etc) are changed.
 
-    // You can use this function to initialise any resources you might need,
-    // but be careful - it will be called on the audio thread, not the GUI thread.
     juce::File myFile("C:\\Users\\pacau\\Documents\\first_ableton Project\\Space_Explorer.flac");
     audioSrc = getAudioBufferFromFile(myFile);
-    // For more details, see the help for AudioProcessor::prepareToPlay()
+    deltaTime = 1/sampleRate;
+    
 }
 
 void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& bufferToFill)
@@ -50,28 +47,49 @@ void MainComponent::getNextAudioBlock (const juce::AudioSourceChannelInfo& buffe
     auto buffer = bufferToFill.buffer;
     auto numChannels = buffer->getNumChannels();
     auto numSamples = buffer->getNumSamples();
-    juce::AudioBuffer<float> outputBuffer(numChannels, numSamples);
-    float val = 0;
-    auto threshold = 0.3;
+    juce::AudioBuffer<float> outputBuffer(*buffer);
+    float val = 0.0;
+    auto threshold = 0.4;
+
     for (auto chan = 0; chan < numChannels; chan++)
     {
-        auto wPtr = outputBuffer.getWritePointer(chan);
         auto rPtr = buffer->getReadPointer(chan);
 
         for (auto sample = 0; sample < numSamples; sample++)
         {
             if (abs(rPtr[sample]) >= threshold)
-                wPtr[sample] = rPtr[sample];
-            else
-            {
-                wPtr[sample] = 0;
-            }
-                
+                val += abs(rPtr[sample]) / numSamples;
         }
     }
 
-    bufferToFill.buffer->makeCopyOf(outputBuffer);
+    auto level = 0.1f;
+    if (time >= std::numeric_limits<double>::max())
+    {
+        time = 0.0;
+    }
 
+    float* monoBuff = new float[numSamples];
+    for (auto sample = 0; sample < numSamples; ++sample)
+    {
+        auto sinVal = level * sin(2 * juce::MathConstants<double>::pi * frequency * time + phase);
+        monoBuff[sample] = sinVal;
+        time += deltaTime;
+    }
+    
+    if (val > 0.3)
+    {
+
+    
+        for (auto chan = 0; chan < numChannels; ++chan)
+        {
+            auto wPtr =  buffer->getWritePointer(chan, bufferToFill.startSample);
+       
+            for (auto sample = 0; sample < numSamples; ++sample)
+            {                wPtr[sample] += monoBuff[sample];
+
+            }
+        }
+    }
     
 }
 
@@ -83,6 +101,8 @@ std::unique_ptr<juce::AudioFormatReaderSource> MainComponent::getAudioBufferFrom
     auto newSource = std::make_unique<juce::AudioFormatReaderSource>(reader, true);
     return newSource;
 }
+
+
 
 void MainComponent::releaseResources()
 {
